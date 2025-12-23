@@ -1,18 +1,18 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { 
-  register, 
-  login, 
-  getMe, 
-  logout, 
-  refreshToken 
+import {
+  register,
+  login,
+  getMe,
+  logout,
+  refreshToken
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { validate } from '../middleware/validationMiddleware.js';
 
 const router = express.Router();
 
-// Validation rules
+
 const registerValidation = [
   body('username')
     .trim()
@@ -37,7 +37,7 @@ const loginValidation = [
     .notEmpty().withMessage('Password is required')
 ];
 
-// Routes
+
 router.post('/register', validate(registerValidation), register);
 router.post('/login', validate(loginValidation), login);
 router.post('/refresh', refreshToken);

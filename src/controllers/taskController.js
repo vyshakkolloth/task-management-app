@@ -2,27 +2,27 @@ import Task from '../models/Task.js';
 import Category from '../models/Category.js';
 import mongoose from 'mongoose';
 
-// Helper function to build filter query
+
 const buildFilterQuery = (user, filters) => {
   const query = { user: user._id };
-  
-  // Filter by status
+
+
   if (filters.status) {
     const statuses = filters.status.split(',');
     query.status = { $in: statuses };
   }
-  
-  // Filter by priority
+
+
   if (filters.priority) {
     query.priority = filters.priority;
   }
-  
-  // Filter by category
+
+
   if (filters.category) {
     query.category = filters.category;
   }
-  
-  // Filter by due date range
+
+
   if (filters.dueDate) {
     if (filters.dueDate.gte) {
       query.dueDate = { ...query.dueDate, $gte: new Date(filters.dueDate.gte) };
@@ -31,8 +31,8 @@ const buildFilterQuery = (user, filters) => {
       query.dueDate = { ...query.dueDate, $lte: new Date(filters.dueDate.lte) };
     }
   }
-  
-  // Search by title or description
+
+
   if (filters.search) {
     query.$or = [
       { title: { $regex: filters.search, $options: 'i' } },
@@ -40,13 +40,11 @@ const buildFilterQuery = (user, filters) => {
       { tags: { $regex: filters.search, $options: 'i' } }
     ];
   }
-  
+
   return query;
 };
 
-// @desc    Get all tasks for user
-// @route   GET /api/tasks
-// @access  Private
+
 export const getTasks = async (req, res) => {
   try {
     const {
@@ -60,7 +58,7 @@ export const getTasks = async (req, res) => {
       ...filters
     } = req.query;
 
-    // Build filter query
+
     const filterQuery = buildFilterQuery(req.user, {
       status,
       priority,
@@ -69,17 +67,17 @@ export const getTasks = async (req, res) => {
       dueDate: filters.dueDate
     });
 
-    // Parse sort options
+
     const [sortField, sortOrder] = sortBy.split(':');
     const sortOptions = {};
     sortOptions[sortField] = sortOrder === 'desc' ? -1 : 1;
 
-    // Pagination
+
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    // Execute query with pagination
+
     const [tasks, total] = await Promise.all([
       Task.find(filterQuery)
         .populate('category', 'name color')
@@ -90,7 +88,7 @@ export const getTasks = async (req, res) => {
       Task.countDocuments(filterQuery)
     ]);
 
-    // Get task statistics
+
     const stats = await Task.aggregate([
       { $match: { user: new mongoose.Types.ObjectId(req.user.id) } },
       {
@@ -101,7 +99,7 @@ export const getTasks = async (req, res) => {
       }
     ]);
 
-    // Format statistics
+
     const statsFormatted = {
       todo: 0,
       'in-progress': 0,
@@ -137,9 +135,7 @@ export const getTasks = async (req, res) => {
   }
 };
 
-// @desc    Get single task
-// @route   GET /api/tasks/:id
-// @access  Private
+
 export const getTask = async (req, res) => {
   try {
     const task = await Task.findOne({
@@ -174,9 +170,7 @@ export const getTask = async (req, res) => {
   }
 };
 
-// @desc    Create task
-// @route   POST /api/tasks
-// @access  Private
+
 export const createTask = async (req, res) => {
   try {
     const {
@@ -189,13 +183,13 @@ export const createTask = async (req, res) => {
       estimatedHours
     } = req.body;
 
-    // Check if category exists and belongs to user
+
     if (category) {
       const categoryExists = await Category.findOne({
         _id: category,
         user: req.user.id
       });
-      
+
       if (!categoryExists) {
         return res.status(404).json({
           success: false,
@@ -207,7 +201,7 @@ export const createTask = async (req, res) => {
       }
     }
 
-    // Create task
+
     const task = await Task.create({
       title,
       description,
@@ -219,7 +213,7 @@ export const createTask = async (req, res) => {
       user: req.user.id
     });
 
-    // Update category task count if category is provided
+
     if (category) {
       await Category.findByIdAndUpdate(category, {
         $inc: { taskCount: 1 }
@@ -252,9 +246,7 @@ export const createTask = async (req, res) => {
   }
 };
 
-// @desc    Update task
-// @route   PUT /api/tasks/:id
-// @access  Private
+
 export const updateTask = async (req, res) => {
   try {
     const task = await Task.findOne({
@@ -272,24 +264,24 @@ export const updateTask = async (req, res) => {
       });
     }
 
-    // Handle category change
+
     const oldCategory = task.category;
     const newCategory = req.body.category;
 
     if (oldCategory && oldCategory.toString() !== newCategory) {
-      // Decrement old category task count
+
       await Category.findByIdAndUpdate(oldCategory, {
         $inc: { taskCount: -1 }
       });
     }
 
     if (newCategory && oldCategory?.toString() !== newCategory) {
-      // Check if new category exists and belongs to user
+
       const categoryExists = await Category.findOne({
         _id: newCategory,
         user: req.user.id
       });
-      
+
       if (!categoryExists) {
         return res.status(404).json({
           success: false,
@@ -299,14 +291,14 @@ export const updateTask = async (req, res) => {
           }
         });
       }
-      
-      // Increment new category task count
+
+
       await Category.findByIdAndUpdate(newCategory, {
         $inc: { taskCount: 1 }
       });
     }
 
-    // Update task
+
     Object.keys(req.body).forEach(key => {
       if (key !== 'user' && key !== '_id') {
         task[key] = req.body[key];
@@ -333,9 +325,7 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// @desc    Delete task
-// @route   DELETE /api/tasks/:id
-// @access  Private
+
 export const deleteTask = async (req, res) => {
   try {
     const task = await Task.findOneAndDelete({
@@ -353,7 +343,7 @@ export const deleteTask = async (req, res) => {
       });
     }
 
-    // Decrement category task count if task had a category
+
     if (task.category) {
       await Category.findByIdAndUpdate(task.category, {
         $inc: { taskCount: -1 }
@@ -372,14 +362,12 @@ export const deleteTask = async (req, res) => {
   }
 };
 
-// @desc    Update task status
-// @route   PUT /api/tasks/:id/status
-// @access  Private
+
 export const updateTaskStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    
-    // Validate status transition
+
+
     const task = await Task.findOne({
       _id: req.params.id,
       user: req.user.id
@@ -395,7 +383,7 @@ export const updateTaskStatus = async (req, res) => {
       });
     }
 
-    // Validate status transition rules
+
     if (task.status === 'archived' && status !== 'archived') {
       return res.status(400).json({
         success: false,
@@ -406,7 +394,7 @@ export const updateTaskStatus = async (req, res) => {
       });
     }
 
-    // Update status
+
     task.status = status;
     await task.save();
 
@@ -432,9 +420,7 @@ export const updateTaskStatus = async (req, res) => {
   }
 };
 
-// @desc    Update task priority
-// @route   PUT /api/tasks/:id/priority
-// @access  Private
+
 export const updateTaskPriority = async (req, res) => {
   try {
     const { priority } = req.body;
@@ -480,9 +466,7 @@ export const updateTaskPriority = async (req, res) => {
   }
 };
 
-// @desc    Share task with another user (Bonus)
-// @route   POST /api/tasks/:id/share
-// @access  Private
+
 export const shareTask = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -502,7 +486,7 @@ export const shareTask = async (req, res) => {
       });
     }
 
-    // Check if user exists
+
     const userToShare = await User.findById(userId);
     if (!userToShare) {
       return res.status(404).json({
@@ -514,7 +498,7 @@ export const shareTask = async (req, res) => {
       });
     }
 
-    // Check if already shared
+
     if (task.sharedWith.includes(userId)) {
       return res.status(400).json({
         success: false,
@@ -525,7 +509,7 @@ export const shareTask = async (req, res) => {
       });
     }
 
-    // Add user to sharedWith array
+
     task.sharedWith.push(userId);
     await task.save();
 
@@ -550,9 +534,7 @@ export const shareTask = async (req, res) => {
   }
 };
 
-// @desc    Get tasks shared with me (Bonus)
-// @route   GET /api/tasks/shared
-// @access  Private
+
 export const getSharedTasks = async (req, res) => {
   try {
     const tasks = await Task.find({

@@ -1,13 +1,11 @@
 import Category from '../models/Category.js';
 import Task from '../models/Task.js';
 
-// @desc    Get all categories for user
-// @route   GET /api/categories
-// @access  Private
+
 export const getCategories = async (req, res) => {
   try {
     const categories = await Category.find({ user: req.user.id });
-    
+
     res.json({
       success: true,
       data: {
@@ -25,14 +23,12 @@ export const getCategories = async (req, res) => {
   }
 };
 
-// @desc    Create category
-// @route   POST /api/categories
-// @access  Private
+
 export const createCategory = async (req, res) => {
   try {
     const { name, color } = req.body;
 
-    // Check if category with same name exists for user
+
     const existingCategory = await Category.findOne({
       name,
       user: req.user.id
@@ -72,9 +68,7 @@ export const createCategory = async (req, res) => {
   }
 };
 
-// @desc    Delete category
-// @route   DELETE /api/categories/:id
-// @access  Private
+
 export const deleteCategory = async (req, res) => {
   try {
     const category = await Category.findOneAndDelete({
@@ -92,7 +86,7 @@ export const deleteCategory = async (req, res) => {
       });
     }
 
-    // Remove category from all tasks that have this category
+
     await Task.updateMany(
       { category: category._id, user: req.user.id },
       { category: null }

@@ -25,7 +25,7 @@ const taskSchema = new mongoose.Schema({
   dueDate: {
     type: Date,
     validate: {
-      validator: function(value) {
+      validator: function (value) {
         return !value || value > new Date();
       },
       message: 'Due date must be in the future'
@@ -72,8 +72,8 @@ const taskSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Auto-update completedAt when status changes to completed
-taskSchema.pre('save', function(next) {
+
+taskSchema.pre('save', function (next) {
   if (this.isModified('status') && this.status === 'completed' && !this.completedAt) {
     this.completedAt = new Date();
   }
@@ -83,7 +83,7 @@ taskSchema.pre('save', function(next) {
   next();
 });
 
-// Indexes for better query performance
+
 taskSchema.index({ user: 1, status: 1 });
 taskSchema.index({ user: 1, dueDate: 1 });
 taskSchema.index({ user: 1, priority: 1 });

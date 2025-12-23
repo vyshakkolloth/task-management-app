@@ -5,28 +5,28 @@ export const errorHandler = (err, req, res, next) => {
   let message = err.message || 'Internal Server Error';
   let errorCode = 'SERVER_ERROR';
 
-  // Mongoose validation error
+
   if (err.name === 'ValidationError') {
     statusCode = 400;
     message = 'Validation Error';
     errorCode = 'VALIDATION_ERROR';
   }
 
-  // Mongoose duplicate key error
+
   if (err.code === 11000) {
     statusCode = 409;
     message = 'Duplicate field value entered';
     errorCode = 'DUPLICATE_KEY';
   }
 
-  // Mongoose CastError (invalid ObjectId)
+
   if (err.name === 'CastError') {
     statusCode = 400;
     message = 'Invalid ID format';
     errorCode = 'INVALID_ID';
   }
 
-  // JWT errors
+
   if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token';

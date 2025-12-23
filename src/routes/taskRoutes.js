@@ -1,25 +1,25 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { 
-  getTasks, 
-  getTask, 
-  createTask, 
-  updateTask, 
-  deleteTask, 
-  updateTaskStatus, 
+import {
+  getTasks,
+  getTask,
+  createTask,
+  updateTask,
+  deleteTask,
+  updateTaskStatus,
   updateTaskPriority,
   shareTask,
-  getSharedTasks 
+  getSharedTasks
 } from '../controllers/taskController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { validate } from '../middleware/validationMiddleware.js';
 
 const router = express.Router();
 
-// All routes are protected
+
 router.use(protect);
 
-// Validation rules
+
 const taskValidation = [
   body('title')
     .trim()
@@ -49,7 +49,7 @@ const taskValidation = [
     .isFloat({ min: 0 }).withMessage('Estimated hours must be a positive number')
 ];
 
-// Routes
+
 router.route('/')
   .get(getTasks)
   .post(validate(taskValidation), createTask);
@@ -59,7 +59,7 @@ router.route('/:id')
   .put(validate(taskValidation), updateTask)
   .delete(deleteTask);
 
-router.put('/:id/status', 
+router.put('/:id/status',
   validate([body('status').isIn(['todo', 'in-progress', 'completed', 'archived'])]),
   updateTaskStatus
 );
@@ -69,8 +69,8 @@ router.put('/:id/priority',
   updateTaskPriority
 );
 
-// Bonus routes
-router.post('/:id/share', 
+
+router.post('/:id/share',
   validate([body('userId').notEmpty().withMessage('User ID is required')]),
   shareTask
 );
